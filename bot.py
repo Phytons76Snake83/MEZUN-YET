@@ -4,6 +4,8 @@ import os
 import cv2
 import numpy as np
 from PIL import Image
+import sqlite3
+
 
 # Bot ayarları
 intents = discord.Intents.default()
@@ -105,13 +107,34 @@ async def video(ctx):
                     if resized_mask[i, j, 3] > 0:
                         frame[y + i, x + j] = resized_mask[i, j][:3]
 
-        cv2.imshow("Maskelenmiş Video", frame)
+        cv2.imshow("Maskelenmis Video", frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
     video_capture.release()
     cv2.destroyAllWindows()
-
+@bot.command()
+async def info(ctx):
+    await ctx.send("Merhaba! Benim adım MaskeBot. Benimle çoğu yüz maskeleme işlemlerini halledebirirsin.\n Botu çalıştırmadan önce şunu bilmelisin ki !kaydet komutuna herhangi bir resim koymalısın. Bu resimler png olsa çok daha güzel filtreler. Png resim olmasa da resmi png'ye dönüştürebiliyorum ama kalite biraz daha azalıyor.\n !video komutunu kullanırsanız kameranız açılır ve !kaydet'e kaydettiğiniz png resim otomatik olarak yüzünüze maskelenir.\n Ve eğer !foto komutunu kullanırsanız ise !foto komutu ile gönderdiğiniz resimi !kaydet'teki resim ile maskelerim.\n Daha projeye birçok şey eklenebilir. Eğer öneri veya şikayetiniz olursa !önveşik komutunu kullandıktan sonra mesajınızı bırakıp bize iletebilirsiniz.\n Anlayışınız için çok teşekkürler. Şimdilik Görüşürüz!")
 # Token'i config.py dosyasından al
+
+@bot.command()
+async def önveşik(ctx, *, mesaj=None):
+    kullanici = str(ctx.author)
+
+    if not mesaj :
+        await ctx.send("Lütfen koddan sonraki alana öneri ve şikayetlerinizi yazın.")
+        return
+
+    # Veritabanına kaydet
+    conn = sqlite3.connect('oneri_ve_sikayetler.db')
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO oneriler (kullanici, mesaj) VALUES (?, ?)", (kullanici, mesaj))
+    conn.commit()
+    conn.close()
+
+    await ctx.send("Geri bildiriminiz kaydedildi. Teşekkürler!")
+    
+
 from config import token
 bot.run(token)
